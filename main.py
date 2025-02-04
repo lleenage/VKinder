@@ -7,7 +7,7 @@ from vk_api.longpoll import VkLongPoll, VkEventType
 
 from private.private import token
 
-from vkbot_func import VkBot
+from vkbot import VkBot
 
 # token = input('Token: ')
 token = token
