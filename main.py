@@ -1,12 +1,11 @@
 # python -m pip install vk_api
 # python -m pip install bs4
-from pprint import pprint
 from random import randrange
 
 import vk_api
 from vk_api.longpoll import VkLongPoll, VkEventType
 
-from private import token
+from private.private import token
 
 from vkbot_func import VkBot
 
