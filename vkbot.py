@@ -1,6 +1,11 @@
+from pprint import pprint
+
 import requests
 import json
 from datetime import date
+
+from private.private import token, my_token
+#my_token - токен которые я получила для себя через приложение(используется не для сообщества)
 
 
 class VkBot:
@@ -11,23 +16,9 @@ class VkBot:
         self.version = version
         self.params = {'access_token': self.token, 'v': self.version}
 
-        self.commands = ["ПРИВЕТ", "ПОКА", "МОЙ ГОРОД", "МОЙ ПОЛ"]
+        self.commands = ["ПРИВЕТ", "ПОКА", "НАЙТИ ПАРУ", "ДОБАВИТЬ ПРЕДПОЧТЕНИЯ", "СЛЕДУЮЩИЙ", "ПОДХОДИТ", "НЕ ПОДХОДИТ"]
 
-    #методы для получения родного города пользователя и города, в котором живет пользователь
-    def get_home_town(self):
-        url = self.base_url + 'users.get?'
-        param = {
-            **self.params,
-            'user_ids': self.user_id,
-            'fields': 'home_town'
-        }
-        response = requests.get(url, params=param)
-        try:
-            users_town = response.json()['response'][0]['home_town']
-            return users_town
-        except:
-            return 'Родной город не указан'
-
+    #методы для получения города пользователя
     def get_city(self):
         url = self.base_url + 'users.get?'
         param = {
@@ -37,8 +28,12 @@ class VkBot:
         }
         response = requests.get(url, params=param)
         try:
-            users_city = response.json()['response'][0]['title']
-            return users_city
+            try:
+                users_city = response.json()['response'][0]['title']
+                return users_city
+            except:
+                users_town = response.json()['response'][0]['home_town']
+                return users_town
         except:
             return 'Город не указан'
 
@@ -60,11 +55,7 @@ class VkBot:
             user_gender = 'Пол не указан'
         return user_gender
 
-
     #метод для получения имени и фамилии(
-    # get_name()[0] - имя
-    # get_name()[1] - фамилия
-    # )
     def get_name(self):
         url = self.base_url + 'users.get?'
         param = {
@@ -98,11 +89,49 @@ class VkBot:
         except:
             return 'Год или дата рождения не указана'
 
-    #метод получения 3 фотографий с наибольшим количеством лайков
-    def get_photo(self, user_id, count=3):
+    #метод получения списка из 3 фотографий с наибольшим количеством лайков
+    def get_photo(self, my_token):
+        url = f"{self.base_url}photos.get"
+        param = {
+            'access_token': my_token,
+             'v': self.version,
+            "owner_id": self.user_id,
+            "album_id": "profile",
+            "extended": 1
+        }
+        response = requests.get(url, params=param)
+        photos_dict = {}
+        #вводим словарь, где ключок будет количество лайков, а зачением - ссылка
+        #в цикле перебираем всю информацию о фотографиях и составляем словарь
+        for photo in response.json()['response']['items']:
+            likes_count = photo['likes']['count']
+            url = photo['orig_photo']['url']
+            photos_dict[likes_count] = url
+
+        photos_url = []
+        #Получаем 1 фото
+        inverse = [key for key in photos_dict.keys()]
+        max_key = max(inverse)
+        photos_url.append(photos_dict.pop(max_key))
+        #Получаем 2 фото
+        inverse = [key for key in photos_dict.keys()]
+        max_key = max(inverse)
+        photos_url.append(photos_dict.pop(max_key))
+        #Получаем 3 фото
+        inverse = [key for key in photos_dict.keys()]
+        max_key = max(inverse)
+        photos_url.append(photos_dict.pop(max_key))
+        return photos_url
+
+    #метод, позволяющий боту найти подходящих кандидатов после указания предпочтений
+    def find_lover(self):
         pass
 
-    #метод получения предпочтений пользователя и добавление фаворита в бд
+    #метод получения предпочтений пользователя
+    def get_preferences(self):
+        pass
+
+    # метод добавления в избранные кандидаты
     def add_favorite(self):
         pass
 
@@ -121,16 +150,30 @@ class VkBot:
     #метод по обработке тех или иных сообщений
     def new_message(self, message):
         if message.upper() == self.commands[0]:
-            return f"Привет, {self.get_name()[0]}!"
+            self.get_name()
+            self.get_age()
+            self.get_sex()
+            self.get_city()
+            self.get_photo(my_token)
+            #нужны ли нам в этой переменной, помимо приветствия, правила использования и возмжности?
+            if self.get_city() == 'Город не указан':
+                #в будущем перенесем это сообщение, когда пользователь напишет что-то вроде "найти пару"
+                send_message = f"Привет, {self.get_name()[0]}! Тебе нужно указать город в котором ты живешь, иначе я не смогу подобрать тебе пару"
+            else:
+                send_message = f"Привет, {self.get_name()[0]}!"
+            return send_message
 
         elif message.upper() == self.commands[1]:
             return f"До встречи, {self.get_name()[0]}!"
-        #проверяю на работоспособность получение города пользователя
-        elif message.upper() == self.commands[2]:
-            town = [self.get_home_town(),  self.get_city()]
-            return town
-        #проверка медотода получения гендера
-        elif message.upper() == self.commands[3]:
-            return self.get_sex()
+
         else:
             return "Я пока не знаю такой команды. 😞"
+
+if __name__ == '__main__':
+    user_id = '821271818'
+    vk_token = token
+    my_token = my_token
+
+    VK = VkBot(vk_token, user_id)
+    photo = VK.get_photo(my_token)
+    pprint(photo)

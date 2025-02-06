@@ -19,8 +19,9 @@ longpoll = VkLongPoll(vk_session)
 def write_msg(user_id, message):
     vk_session.method('messages.send', {'user_id': user_id, 'message': message,  'random_id': randrange(10 ** 7),})
 
+if __name__ == '__main__':
+    print("Бот запущен")
 
-print("Бот запущен")
 for event in longpoll.listen():
     if event.type == VkEventType.MESSAGE_NEW:
         if event.to_me:
