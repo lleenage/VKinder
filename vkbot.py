@@ -65,10 +65,10 @@ class VkBot:
 
         }
         response = requests.get(url, params=param)
-        self.user_first_name = response.json()['response'][0]['first_name']
-        self.user_last_name = response.json()['response'][0]['last_name']
+        user_first_name = response.json()['response'][0]['first_name']
+        user_last_name = response.json()['response'][0]['last_name']
 
-        return self.user_first_name, self.user_last_name
+        return user_first_name, user_last_name
 
     #метод получения возраста(нужно доделать, либо я плохо искала и не нашла нужный метод для получения возраста)
     def get_age(self):
@@ -122,6 +122,18 @@ class VkBot:
         max_key = max(inverse)
         photos_url.append(photos_dict.pop(max_key))
         return photos_url
+
+    def get_group_id(self):
+        url = f"{self.base_url}photos.getMessagesUploadServer"
+        param = {
+            **self.params,
+            'peer_id': user_id
+        }
+        response = requests.get(url, params=param).json()
+        return response
+
+    def upload_photo(self):
+        url = f"{self.base_url}photos.saveMessagesPhoto"
 
     #метод, позволяющий боту найти подходящих кандидатов после указания предпочтений
     def find_lover(self):
