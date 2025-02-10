@@ -49,13 +49,13 @@ class VkBot:
         else:
             self.user_sex = 'Не указан'
 
-        d, m, y = data.get('bdate').split('.')
-        date1 = datetime(int(y), int(m), int(d))
-        d2, m2, y2 = date.today().strftime('%d.%m.%Y').split('.')
-        date2 = datetime(int(y2), int(m2), int(d2))
+        day1, month1, year1 = data.get('bdate').split('.')
+        date1 = datetime(int(year1), int(month1), int(day1))
+        day2, month2, year2 = date.today().strftime('%d.%m.%Y').split('.')
+        date2 = datetime(int(year2), int(month2), int(day2))
         diff = relativedelta.relativedelta(date2, date1)
         years = diff.years
-        
+
         self.user_bdate = '{} лет(года)'.format(years)
         self.user_city = data['city'].get('title')
 
@@ -149,21 +149,22 @@ class VkBot:
 
         elif message.upper() == self.commands[1]:
             return f"До встречи, {self.user_first_name}!"
-        # ["ГОРОД", "ПОЛ", "ВОЗРАСТ", "ИМЯ", "ФАМИЛИЯ", "ФОТО"]
+
+        #test
         elif message.upper() == self.test_commands[0]:
-            send_message = f"Твой город '{self.user_city}'"
+            send_message = f"Твой город - {self.user_city}"
             return send_message
         elif message.upper() == self.test_commands[1]:
-            send_message = f"Твой пол '{self.user_sex}'"
+            send_message = f"Твой пол - {self.user_sex}"
             return send_message
         elif message.upper() == self.test_commands[2]:
-            send_message = f"Твой возраст '{self.user_bdate}'"
+            send_message = f"Твой возраст - {self.user_bdate}"
             return send_message
         elif message.upper() == self.test_commands[3]:
-            send_message = f"Твое имя '{self.user_first_name}'"
+            send_message = f"Твое имя - {self.user_first_name}"
             return send_message
         elif message.upper() == self.test_commands[4]:
-            send_message = f"Твоя фамилия '{self.user_last_name}'"
+            send_message = f"Твоя фамилия - {self.user_last_name}"
             return send_message
         elif message.upper() == self.test_commands[5]:
             self.send_photo(self.user_id)
