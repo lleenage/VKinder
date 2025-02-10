@@ -24,6 +24,7 @@ class VkBot:
         self.user_bdate = None
         self.user_city = None
 
+        self.test_commands = ["ГОРОД", "ПОЛ", "ВОЗРАСТ", "ИМЯ", "ФАМИЛИЯ", "ФОТО"]
         self.commands = ["ПРИВЕТ", "ПОКА", "НАЙТИ ПАРУ", "ДОБАВИТЬ ПРЕДПОЧТЕНИЯ", "СЛЕДУЮЩИЙ", "ПОДХОДИТ",
                          "НЕ ПОДХОДИТ", "ПОКАЗАТЬ АНКЕТУ"]
 
@@ -38,16 +39,16 @@ class VkBot:
         response = requests.get(url, params=param)
         assert response.status_code == 200
         data = response.json()['response'][0]
-        self.user_first_name = data['first_name']
-        self.user_last_name = data['last_name']
-        if data['sex'] == 1:
+        self.user_first_name = data.get('first_name')
+        self.user_last_name = data.get('last_name')
+        if data.get('sex') == 1:
             self.user_sex = 'Женский'
-        elif data['sex'] == 2:
+        elif data.get('sex') == 2:
             self.user_sex = 'Мужской'
         else:
             self.user_sex = 'Не указан'
-        self.user_bdate = data['bdate']
-        self.user_city = data['city']['title']
+        self.user_bdate = data.get('bdate')
+        self.user_city = data['city'].get('title')
 
     def get_photo_id(self, my_token):
         url = f"{self.base_url}photos.get"
@@ -85,7 +86,7 @@ class VkBot:
 
     def send_photo(self, owner_id):
         url = f"{self.base_url}messages.send"
-
+        all_photo = []
         photo_ids = self.get_photo_id(my_token)
         for photo_id in photo_ids:
 
@@ -96,9 +97,8 @@ class VkBot:
                 'attachment': f'photo{owner_id}_{photo_id}'
             }
             response = requests.get(url, params=param)
-
-
-            return response.json()
+            all_photo.append(response.json())
+        return all_photo
 
     #метод, позволяющий боту найти подходящих кандидатов после указания предпочтений
     def find_lover(self):
@@ -126,9 +126,9 @@ class VkBot:
 
     # метод по обработке тех или иных сообщений
     def new_message(self, message):
+        self.get_user_data()
+        self.get_photo_id(my_token) #тут будет немного исправлено, когда мы уже будет работать с анкетами других пользвателей
         if message.upper() == self.commands[0]:
-            self.get_user_data()
-            self.get_photo_id(my_token)
             # нужны ли нам в этой переменной, помимо приветствия, правила использования и возмжности?
             if self.user_city is None:
                 # в будущем перенесем это сообщение, когда пользователь напишет что-то вроде "найти пару"
@@ -139,9 +139,26 @@ class VkBot:
 
         elif message.upper() == self.commands[1]:
             return f"До встречи, {self.user_first_name}!"
-
-        elif message.upper() == self.commands[7]:
-            self.send_photo(user_id)
+        # ["ГОРОД", "ПОЛ", "ВОЗРАСТ", "ИМЯ", "ФАМИЛИЯ", "ФОТО"]
+        elif message.upper() == self.test_commands[0]:
+            send_message = f"Твой город '{self.user_city}'"
+            return send_message
+        elif message.upper() == self.test_commands[1]:
+            send_message = f"Твой пол '{self.user_sex}'"
+            return send_message
+        elif message.upper() == self.test_commands[2]:
+            send_message = f"Твой возраст '{self.user_bdate}'"
+            return send_message
+        elif message.upper() == self.test_commands[3]:
+            send_message = f"Твое имя '{self.user_first_name}'"
+            return send_message
+        elif message.upper() == self.test_commands[4]:
+            send_message = f"Твоя фамилия '{self.user_last_name}'"
+            return send_message
+        elif message.upper() == self.test_commands[5]:
+            self.send_photo(self.user_id)
+            send_message = f"Вот твое фото"
+            return send_message
 
         else:
             return "Я пока не знаю такой команды. 😞"
