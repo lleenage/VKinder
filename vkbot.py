@@ -2,7 +2,8 @@ from pprint import pprint
 
 import requests
 import json
-from datetime import date
+from datetime import date, datetime
+from dateutil import relativedelta
 
 from private.private import token, my_token
 
@@ -47,7 +48,15 @@ class VkBot:
             self.user_sex = 'Мужской'
         else:
             self.user_sex = 'Не указан'
-        self.user_bdate = data.get('bdate')
+
+        d, m, y = data.get('bdate').split('.')
+        date1 = datetime(int(y), int(m), int(d))
+        d2, m2, y2 = date.today().strftime('%d.%m.%Y').split('.')
+        date2 = datetime(int(y2), int(m2), int(d2))
+        diff = relativedelta.relativedelta(date2, date1)
+        years = diff.years
+        
+        self.user_bdate = '{} лет(года)'.format(years)
         self.user_city = data['city'].get('title')
 
     def get_photo_id(self, my_token):
@@ -86,16 +95,17 @@ class VkBot:
 
     def send_photo(self, owner_id):
         url = f"{self.base_url}messages.send"
+
         all_photo = []
         photo_ids = self.get_photo_id(my_token)
         for photo_id in photo_ids:
-
             param = {
                 **self.params,
                 'user_id': self.user_id,
                 'random_id': 0,
                 'attachment': f'photo{owner_id}_{photo_id}'
             }
+
             response = requests.get(url, params=param)
             all_photo.append(response.json())
         return all_photo
