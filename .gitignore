@@ -1,3 +1,4 @@
 \.idea
 \private
 \__pycache__
+.env

@@ -1,20 +1,21 @@
 from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, Boolean
 from sqlalchemy.orm import relationship
-from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import declarative_base
 from sqlalchemy.sql import func
+import sqlalchemy as sq
 
 Base = declarative_base()
 
 class User(Base):
     __tablename__ = 'users'
 
-    id = Column(Integer, primary_key=True)
-    vk_id = Column(Integer, unique=True)
-    first_name = Column(String(100), nullable=False)
-    last_name = Column(String(100), nullable=False)
-    age = Column(Integer)
-    gender = Column(String(1))  # M/F
-    city = Column(String(50))
+    id = Column(sq.Integer, primary_key=True)
+    vk_id = Column(sq.Integer, unique=True)
+    first_name = Column(sq.String(100), nullable=False)
+    last_name = Column(sq.String(100), nullable=False)
+    age = Column(sq.Integer)
+    gender = Column(sq.String(1))  # M/F
+    city = Column(sq.String(50))
 
     def __repr__(self):
         return f"<User(vk_id={self.vk_id}, first_name='{self.first_name}', last_name='{self.last_name}')>"
@@ -22,9 +23,9 @@ class User(Base):
 class ProfilePhoto(Base):
     __tablename__ = 'profile_photo'
 
-    id = Column(Integer, primary_key=True)
-    user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
-    photo_url = Column(String, nullable=False)
+    id = Column(sq.Integer, primary_key=True)
+    user_id = Column(sq.Integer, sq.ForeignKey('users.id'), nullable=False)
+    photo_url = Column(sq.String, nullable=False)
 
     user = relationship("User")
 
@@ -34,9 +35,9 @@ class ProfilePhoto(Base):
 class FavoriteUser(Base):
     __tablename__ = 'favorite_user'
 
-    id = Column(Integer, primary_key=True)
-    user_id = Column(Integer, ForeignKey('users.id'))
-    favorited_by = Column(Integer, ForeignKey('users.id'))
+    id = Column(sq.Integer, primary_key=True)
+    user_id = Column(sq.Integer, sq.ForeignKey('users.id'))
+    favorited_by = Column(sq.Integer, sq.ForeignKey('users.id'))
     created_at = Column(DateTime, server_default=func.now())
 
     user = relationship("User", foreign_keys=[user_id])
@@ -48,9 +49,9 @@ class FavoriteUser(Base):
 class Blacklist(Base):
     __tablename__ = 'blacklist'
 
-    id = Column(Integer, primary_key=True)
-    user_id = Column(Integer, ForeignKey('users.id'))
-    blocked_by = Column(Integer, ForeignKey('users.id'))
+    id = Column(sq.Integer, primary_key=True)
+    user_id = Column(sq.Integer, sq.ForeignKey('users.id'))
+    blocked_by = Column(sq.Integer, sq.ForeignKey('users.id'))
     created_at = Column(DateTime, server_default=func.now())
 
     blocked_user = relationship("User", foreign_keys=[user_id])
