@@ -1,61 +1,62 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, Boolean
-from sqlalchemy.orm import relationship
+import os
+from dotenv import load_dotenv
+from sqlalchemy import create_engine, Column, Integer, String, ForeignKey
 from sqlalchemy.orm import declarative_base
-from sqlalchemy.sql import func
-import sqlalchemy as sq
+from sqlalchemy.orm import relationship, backref
 
+load_dotenv()  # загружает переменные окружения из файла .env
+
+# Получаем значения из переменной окружения
+DB_HOST = os.getenv("DB_HOST")
+DB_PORT = int(os.getenv("DB_PORT"))
+DB_USERNAME = os.getenv("DB_USERNAME")
+DB_PASSWORD = os.getenv("DB_PASSWORD")
+DB_DATABASE = os.getenv("DB_DATABASE")
+
+engine = create_engine(
+    f"postgresql+psycopg2://{DB_USERNAME}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_DATABASE}")
 Base = declarative_base()
+
 
 class User(Base):
     __tablename__ = 'users'
 
-    id = Column(sq.Integer, primary_key=True)
-    vk_id = Column(sq.Integer, unique=True)
-    first_name = Column(sq.String(100), nullable=False)
-    last_name = Column(sq.String(100), nullable=False)
-    age = Column(sq.Integer)
-    gender = Column(sq.String(1))  # M/F
-    city = Column(sq.String(50))
+    id = Column(Integer, primary_key=True)
+    first_name = Column(String, nullable=False)
+    last_name = Column(String, nullable=False)
+    age = Column(Integer)
+    gender = Column(String)
+    city = Column(String)
 
-    def __repr__(self):
-        return f"<User(vk_id={self.vk_id}, first_name='{self.first_name}', last_name='{self.last_name}')>"
+    profile_photo = relationship('ProfilePhoto', uselist=False, backref='user')
+    favorite_user = relationship('User', secondary='favorite_user_relation', backref='favorited_by')
+
 
 class ProfilePhoto(Base):
-    __tablename__ = 'profile_photo'
+    __tablename__ = 'profile_photos'
 
-    id = Column(sq.Integer, primary_key=True)
-    user_id = Column(sq.Integer, sq.ForeignKey('users.id'), nullable=False)
-    photo_url = Column(sq.String, nullable=False)
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey('users.id'))
+    photo_url = Column(String)
 
-    user = relationship("User")
+    user = relationship('User', backref='profile_photo')
 
-    def __repr__(self):
-        return f"<ProfilePhoto(user_id={self.user_id}, photo_url='{self.photo_url}')>"
-
-class FavoriteUser(Base):
-    __tablename__ = 'favorite_user'
-
-    id = Column(sq.Integer, primary_key=True)
-    user_id = Column(sq.Integer, sq.ForeignKey('users.id'))
-    favorited_by = Column(sq.Integer, sq.ForeignKey('users.id'))
-    created_at = Column(DateTime, server_default=func.now())
-
-    user = relationship("User", foreign_keys=[user_id])
-    favoriter = relationship("User", foreign_keys=[favorited_by])
-
-    def __repr__(self):
-        return f"<FavoriteUser(user_id={self.user_id}, favorited_by={self.favorited_by}, created_at={self.created_at})>"
 
 class Blacklist(Base):
-    __tablename__ = 'blacklist'
+    __tablename__ = 'blacklists'
 
-    id = Column(sq.Integer, primary_key=True)
-    user_id = Column(sq.Integer, sq.ForeignKey('users.id'))
-    blocked_by = Column(sq.Integer, sq.ForeignKey('users.id'))
-    created_at = Column(DateTime, server_default=func.now())
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey('users.id'))
+    blocked_by = Column(Integer, ForeignKey('users.id'))
+    created_at = Column(String)
 
-    blocked_user = relationship("User", foreign_keys=[user_id])
-    blocker = relationship("User", foreign_keys=[blocked_by])
 
-    def __repr__(self):
-        return f"<Blacklist(blocked_user_id={self.blocked_user_id}, blocked_by={self.blocked_by}, created_at={self.created_at})>"
+class FavoriteUserRelation(Base):
+    __tablename__ = 'favorite_user_relation'
+
+    favoriter_id = Column(Integer, ForeignKey('users.id'), primary_key=True)
+    favored_id = Column(Integer, ForeignKey('users.id'), primary_key=True)
+
+
+# Создание схемы базы данных
+Base.metadata.create_all(engine)
