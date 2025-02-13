@@ -5,11 +5,7 @@ import json
 from datetime import date, datetime
 from dateutil import relativedelta
 
-from private.private import token, my_token
-
-
-# token = ""
-# my_token - токен которые я получила для себя через приложение(используется не для сообщества)
+from private.private import token, my_token, user_id
 
 
 class VkBot:
@@ -38,10 +34,14 @@ class VkBot:
             'fields': 'city, sex, bdate, about'
         }
         response = requests.get(url, params=param)
+
         assert response.status_code == 200
         data = response.json()['response'][0]
+
         self.user_first_name = data.get('first_name')
+
         self.user_last_name = data.get('last_name')
+
         if data.get('sex') == 1:
             self.user_sex = 'Женский'
         elif data.get('sex') == 2:
@@ -49,15 +49,20 @@ class VkBot:
         else:
             self.user_sex = 'Не указан'
 
-        day1, month1, year1 = data.get('bdate').split('.')
-        date1 = datetime(int(year1), int(month1), int(day1))
-        day2, month2, year2 = date.today().strftime('%d.%m.%Y').split('.')
-        date2 = datetime(int(year2), int(month2), int(day2))
-        diff = relativedelta.relativedelta(date2, date1)
-        years = diff.years
-
-        self.user_bdate = '{} лет(года)'.format(years)
         self.user_city = data['city'].get('title')
+
+        try:
+            day1, month1, year1 = data.get('bdate').split('.')
+            date1 = datetime(int(year1), int(month1), int(day1))
+            day2, month2, year2 = date.today().strftime('%d.%m.%Y').split('.')
+            date2 = datetime(int(year2), int(month2), int(day2))
+            diff = relativedelta.relativedelta(date2, date1)
+            years = diff.years
+
+            self.user_bdate = '{} лет(года)'.format(years)
+        except:
+            return 'Вам нужно указать дату рождения в профиле и попробовать еще раз.'
+
 
     def get_photo_id(self, my_token):
         url = f"{self.base_url}photos.get"
@@ -70,7 +75,7 @@ class VkBot:
         }
         response = requests.get(url, params=param)
         photos_dict = {}
-        # вводим словарь, где ключок будет количество лайков, а зачением - ссылка
+        # вводим словарь, где ключом будет количество лайков, а значением - id фотографии
         # в цикле перебираем всю информацию о фотографиях и составляем словарь
         for photo in response.json()['response']['items']:
             likes_count = photo['likes']['count']
@@ -136,11 +141,16 @@ class VkBot:
 
     # метод по обработке тех или иных сообщений
     def new_message(self, message):
+        # в начале каждого "старта" с ботом получаем информацию всех новых пользователей
+        # и нужно будет добавить сохранение информации в бд
         self.get_user_data()
-        self.get_photo_id(my_token) #тут будет немного исправлено, когда мы уже будет работать с анкетами других пользвателей
+
+        #в этом методе также необходимо добавить сохранение фотографий в бд, а не выведение их сразу в чат
+        self.get_photo_id(my_token)
         if message.upper() == self.commands[0]:
             # нужны ли нам в этой переменной, помимо приветствия, правила использования и возмжности?
             if self.user_city is None:
+
                 # в будущем перенесем это сообщение, когда пользователь напишет что-то вроде "найти пару"
                 send_message = f"Привет, {self.user_first_name}! Тебе нужно указать город в котором ты живешь, иначе я не смогу подобрать тебе пару"
             else:
@@ -151,6 +161,9 @@ class VkBot:
             return f"До встречи, {self.user_first_name}!"
 
         #test
+        #проверка информации пользователя (ваш введенный user_id)
+        #в будущем все эти методы должны будут работать на предлагаемый тебе пользователей в чате знакомств
+        #но обязательно в начале каждого "старта" с ботом нужно получать информацию всех новых пользователей и сохранять в бд
         elif message.upper() == self.test_commands[0]:
             send_message = f"Твой город - {self.user_city}"
             return send_message
@@ -176,14 +189,10 @@ class VkBot:
 
 
 if __name__ == '__main__':
-    user_id = '136220003'
-    vk_token = token
+    user_id = user_id #тут ипользуйте id пользователя, информацию которого вам удобно обрабатывать на начальном этапе
+    vk_token = token #токен сообщества
 
     VK = VkBot(vk_token, user_id)
-    # send = VK.send_photo(user_id)
-    # print(send)
-    # photo = VK.get_photo(my_token)
-    # pprint(photo)
     get_user = VK.get_user_data()
     print(
         f'Информация о пользователе:\nИмя: {VK.user_first_name}\nФамилия: {VK.user_last_name}\nПол: {VK.user_sex}\nДата рождения: {VK.user_bdate}\nГород: {VK.user_city}')

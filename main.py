@@ -1,5 +1,6 @@
 #pip install vk_api
 #pip install requests
+# pip install python-dateutil
 from random import randrange
 
 import vk_api
